@@ -1,3 +1,3 @@
-# Inventory Manager API v2
+# Hostel Asset Management API
 
-A production-ready FastAPI inventory management system with JWT authentication, categories, stock alerts, pagination
+A production-ready FastAPI backend for managing hostel assets, hostel blocks, inventory, and maintenance requests with JWT authentication, Prisma ORM, Docker, pagination, and search.
