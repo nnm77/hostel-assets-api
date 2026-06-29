@@ -20,7 +20,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-# ── Category ──────────────────────────────────────────────────────────────────
+# ── Hostel──────────────────────────────────────────────────────────────────
 
 class HostelCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -46,7 +46,7 @@ class ProductCreate(BaseModel):
     sku: str = Field(..., min_length=1, max_length=50)
     image: Optional[str] = None
     quantity: int = Field(default=0, ge=0)
-    category_id: Optional[int] = None
+    hostel_id: Optional[int] = None
     low_stock_threshold: int = Field(default=10, ge=0)
 
     @field_validator("price")
@@ -61,7 +61,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     image: Optional[str] = None
     quantity: Optional[int] = Field(None, ge=0)
-    category_id: Optional[int] = None
+    hostel_id: Optional[int] = None
     low_stock_threshold: Optional[int] = Field(None, ge=0)
 
     @field_validator("price")
@@ -80,8 +80,8 @@ class ProductResponse(BaseModel):
     quantity: int
     low_stock_threshold: int
     is_low_stock: bool
-    category_id: Optional[int]
-    category: Optional[CategoryResponse]
+    hostel_id: Optional[int]
+    hostel: Optional[HostelResponse]
     created_at: datetime
     updated_at: datetime
 

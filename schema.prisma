@@ -15,7 +15,7 @@ model User {
   created_at    DateTime @default(now())
 }
 
-model Category {
+model Hostel {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   description String?
@@ -32,8 +32,8 @@ model Product {
   image               String?
   quantity            Int       @default(0)
   low_stock_threshold Int       @default(10)
-  category_id         Int?
-  category            Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  hostel_id         Int?
+  hostel            Hostel? @relation(fields: [hostel_id], references: [id], onDelete: SetNull)
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
 }
