@@ -15,11 +15,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Inventory Manager API",
+    title="Hostel Asset Management API",
     version="2.0.0",
     description=(
-        "Production-ready Inventory Management System with JWT auth, "
-        "categories, stock alerts, pagination, and async background processing."
+    "Backend API for managing hostels, rooms, assets and maintenance requests "
+    "using FastAPI, Prisma ORM, JWT authentication and SQLite."
     ),
     lifespan=lifespan,
     redoc_url="/redoc",
