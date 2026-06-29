@@ -22,12 +22,12 @@ class TokenResponse(BaseModel):
 
 # ── Category ──────────────────────────────────────────────────────────────────
 
-class CategoryCreate(BaseModel):
+class HostelBlockCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
 
 
-class CategoryResponse(BaseModel):
+class HostelBlockResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
