@@ -10,22 +10,22 @@ router = APIRouter()
 @router.get("/", response_model=List[HostelResponse])
 async def list_hostels(_: int = Depends(get_current_user)):
     """List all hostels."""
-    return await prisma.category.find_many(order={"name": "asc"})
+    return await prisma.hostel.find_many(order={"name": "asc"})
 
 
 @router.post("/", response_model=HostelResponse, status_code=status.HTTP_201_CREATED)
 async def create_hostel(body: HostelCreate, _: int = Depends(get_current_user)):
     """Create a new hostel."""
-    existing = await prisma.category.find_first(where={"name": body.name})
+    existing = await prisma.hostel.find_first(where={"name": body.name})
     if existing:
-        raise HTTPException(status_code=400, detail="Hostelname already exists")
-    return await prisma.category.create(data={"name": body.name, "description": body.description})
+        raise HTTPException(status_code=400, detail="Hostel name already exists")
+    return await prisma.hostel.create(data={"name": body.name, "description": body.description})
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_hostel(category_id: int, _: int = Depends(get_current_user)):
-    """Delete a hostel (products keep their data, category_id becomes null)."""
-    existing = await prisma.category.find_unique(where={"id": category_id})
+@router.delete("/{hostel_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_hostel(hostel_id: int, _: int = Depends(get_current_user)):
+    """Delete a hostel."""
+    existing = await prisma.hostel.find_unique(where={"id": hostel_id})
     if not existing:
         raise HTTPException(status_code=404, detail="Hostel not found")
-    await prisma.category.delete(where={"id": category_id})
+    await prisma.hostel.delete(where={"id": hostel_id})
