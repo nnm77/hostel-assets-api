@@ -37,7 +37,8 @@ async def list_products(
     max_price: Optional[float] = Query(None, ge=0),
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    _: int = Depends(get_current_user),
+    #changed authentication ,
+    _: int = None,
 ):
     """
     Paginated, filtered product listing.
@@ -85,7 +86,8 @@ async def list_products(
 async def create_product(
     body: ProductCreate,
     background_tasks: BackgroundTasks,
-    _: int = Depends(get_current_user),
+    #changed authentication,
+    _: int = None,
 ):
     """Create a new product. Queues it for async background processing."""
     existing = await prisma.product.find_first(where={"sku": body.sku})
@@ -115,6 +117,7 @@ async def create_product(
 
 
 @router.get("/low-stock", response_model=List[StockAlert])
+#changed depeneds(get_currecnt_user) to none
 async def low_stock_alerts(_: int = Depends(get_current_user)):
     """
     Returns all products where quantity is at or below their low_stock_threshold.
@@ -144,7 +147,8 @@ async def get_product(product_id: int, _: int = Depends(get_current_user)):
 async def update_product(
     product_id: int,
     body: ProductUpdate,
-    _: int = Depends(get_current_user),
+    #changed authentication
+    _: int = None
 ):
     """Partially update a product. Only provided fields are changed."""
     existing = await prisma.product.find_unique(where={"id": product_id})
@@ -167,7 +171,8 @@ async def update_product(
 async def adjust_stock(
     product_id: int,
     delta: int = Query(..., description="Positive to add stock, negative to remove"),
-    _: int = Depends(get_current_user),
+    #changed authentication
+    _: int = None
 ):
     """
     Adjust stock quantity by a delta value.

@@ -107,3 +107,23 @@ class StockAlert(BaseModel):
     sku: str
     quantity: int
     low_stock_threshold: int
+
+    # ── Room ─────────────────────────────────────────────────────────────────────
+
+class RoomCreate(BaseModel):
+    room_number: str = Field(..., min_length=1, max_length=20)
+    floor: int
+    capacity: int = Field(..., ge=1)
+    hostel_id: int
+
+
+class RoomResponse(BaseModel):
+    id: int
+    room_number: str
+    floor: int
+    capacity: int
+    hostel_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

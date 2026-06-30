@@ -20,6 +20,8 @@ model Hostel {
   name        String    @unique
   description String?
   created_at  DateTime  @default(now())
+
+  rooms       Room[]
   products    Product[]
 }
 
@@ -36,4 +38,16 @@ model Product {
   hostel            Hostel? @relation(fields: [hostel_id], references: [id], onDelete: SetNull)
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  room_number String
+  floor       Int
+  capacity    Int
+
+  hostel_id   Int
+  hostel      Hostel  @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+
+  created_at  DateTime @default(now())
 }

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.core.database import prisma
-from app.routers import products, auth, categories
+from app.routers import products, auth, categories, rooms
 from app.core.queue import start_queue_consumer, stop_queue_consumer
 
 
@@ -28,6 +28,7 @@ app = FastAPI(
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(products.router, prefix="/products", tags=["Products"])
 app.include_router(categories.router, prefix="/hostels", tags=["Hostels"])
+app.include_router(rooms.router, prefix="/rooms", tags=["Rooms"])
 
 
 @app.get("/", tags=["Health"])
