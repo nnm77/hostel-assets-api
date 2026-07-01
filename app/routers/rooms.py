@@ -9,14 +9,14 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[RoomResponse])
-#async def list_rooms(_: int = Depends(get_current_user)):
+
 async def list_rooms(_: int = Depends(get_current_user)):
     """List all rooms."""
     return await prisma.room.find_many(order={"room_number": "asc"})
 
 
 @router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
-#async def create_room(body: RoomCreate, _: int = Depends(get_current_user)):
+
 async def create_room(body: RoomCreate, _: int = Depends(get_current_user)):
 
     existing = await prisma.room.find_first(

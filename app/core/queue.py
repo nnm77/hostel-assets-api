@@ -65,7 +65,7 @@ async def _consume_loop() -> None:
                 _, raw = result
                 product_id = int(raw)
                 logger.info("Processing queued product id=%s", product_id)
-                # ── plug in real processing logic here ──
+                # ── pluging in real processing logic here ──
         except asyncio.CancelledError:
             logger.info("Queue consumer stopping")
             raise
