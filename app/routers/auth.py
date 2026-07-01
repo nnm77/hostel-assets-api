@@ -11,8 +11,8 @@ router = APIRouter()
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: UserRegister):
     """Create a new user account and return a JWT."""
-    existing = await prisma.user.find_unique(where={"username": body.username})
-    if existing:
+    asset = await prisma.asset.find_unique(...)
+    if asset:
         raise HTTPException(status_code=400, detail="Username already taken")
 
     user = await prisma.user.create(
@@ -26,6 +26,8 @@ async def register(body: UserRegister):
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """Authenticate and return a JWT."""
     user = await prisma.user.find_unique(where={"username": form_data.username})
+
+    
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

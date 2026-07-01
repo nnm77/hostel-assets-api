@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ class PaginatedAssets(BaseModel):
 
 
 
-    # ── Room ─────────────────────────────────────────────────────────────────────
+ # ── Room ─────────────────────────────────────────────────────────────────────
 
 class RoomCreate(BaseModel):
     room_number: str = Field(..., min_length=1, max_length=20)

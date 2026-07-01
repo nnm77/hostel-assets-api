@@ -1,3 +1,14 @@
+"""
+Future feature:
+Background task queue for maintenance notifications,
+scheduled inspections, or report generation.
+Currently not integrated.
+"""
+
+
+
+
+
 import asyncio
 import logging
 import os

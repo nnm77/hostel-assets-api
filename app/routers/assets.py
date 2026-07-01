@@ -1,11 +1,9 @@
 import math
-from datetime import datetime
-from typing import List, Optional
+import typing
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import prisma
-from app.core.queue import push_to_queue
 from app.core.security import get_current_user
 from app.models.schemas import (
     PaginatedAssets,
@@ -16,13 +14,20 @@ from app.models.schemas import (
 
 router = APIRouter()
 
+"""
+Asset management endpoints.
+
+Assets belong to rooms and support CRUD operations
+along with quantity management.
+"""
+
 
 
 @router.get("/", response_model=PaginatedAssets)
 async def list_assets(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    search: Optional[str] = Query(None),
+    search: typing.Optional[str] = Query(None),
     _: int = Depends(get_current_user),
 ):
     """List all assets with optional search."""
@@ -58,7 +63,6 @@ async def list_assets(
 @router.post("/", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
 async def create_asset(
     body: AssetCreate,
-    background_tasks: BackgroundTasks,
     _: int = Depends(get_current_user),
 ):
     """Create a new asset."""
@@ -80,7 +84,6 @@ async def create_asset(
         }
     )
 
-    background_tasks.add_task(push_to_queue, asset.id)
     return asset
 
 
@@ -96,6 +99,8 @@ async def get_asset(asset_id: int, _: int = Depends(get_current_user)):
 
     return asset
 
+
+
 @router.put("/{asset_id}", response_model=AssetResponse)
 async def update_asset(
     asset_id: int,
@@ -104,8 +109,10 @@ async def update_asset(
 ):
     """Update an asset."""
 
-    existing = await prisma.asset.find_unique(where={"id": asset_id})
-    if not existing:
+    asset = await prisma.asset.find_unique(
+    where={"id": asset_id}
+)
+    if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
     if body.room_id is not None:
@@ -157,9 +164,16 @@ async def delete_asset(
 ):
     """Delete an asset."""
 
-    existing = await prisma.asset.find_unique(where={"id": asset_id})
+    asset = await prisma.asset.find_unique(
+        where={"id": asset_id}
+    )
 
-    if not existing:
-        raise HTTPException(status_code=404, detail="Asset not found")
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail="Asset not found",
+        )
 
-    await prisma.asset.delete(where={"id": asset_id})
+    await prisma.asset.delete(
+        where={"id": asset_id}
+    )
