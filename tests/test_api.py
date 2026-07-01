@@ -60,7 +60,7 @@ async def test_protected_route_requires_auth(client: AsyncClient):
 # ── Products ──────────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_create_product(client: AsyncClient, auth_headers):
+async def test_create_asset(client: AsyncClient, auth_headers):
     resp = await client.post(
         "/products/",
         json={"name": "Widget", "price": 9.99, "sku": "WGT-001", "quantity": 50},
@@ -82,7 +82,7 @@ async def test_duplicate_sku(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_list_products_pagination(client: AsyncClient, auth_headers):
+async def test_list_assets_pagination(client: AsyncClient, auth_headers):
     for i in range(5):
         await client.post(
             "/products/",

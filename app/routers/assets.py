@@ -17,59 +17,33 @@ from app.models.schemas import (
 router = APIRouter()
 
 
-def _to_response(product) -> dict:
-    """Convert a Prisma product record to a dict compatible with ProductResponse."""
-    return {
-        **product.__dict__,
-        "is_low_stock": product.quantity <= product.low_stock_threshold,
-        "category": product.category if hasattr(product, "category") else None,
-    }
-
 
 @router.get("/", response_model=PaginatedAssets)
-async def list_products(
+async def list_assets(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    search: Optional[str] = Query(None, description="Filter by name or description"),
-    category_id: Optional[int] = Query(None),
-    min_price: Optional[float] = Query(None, ge=0),
-    max_price: Optional[float] = Query(None, ge=0),
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    #changed authentication ,
-    _: int = None,
+    search: Optional[str] = Query(None),
+    _: int = Depends(get_current_user),
 ):
-    """
-    Paginated, filtered product listing.
+    """List all assets with optional search."""
 
-    Supports search by name/description, category, price range, and date range.
-    """
-    where: dict = {}
+    where = {}
 
     if search:
         where["OR"] = [
             {"name": {"contains": search}},
             {"description": {"contains": search}},
         ]
-    if category_id is not None:
-        where["category_id"] = category_id
-    if min_price is not None:
-        where.setdefault("price", {})["gte"] = min_price
-    if max_price is not None:
-        where.setdefault("price", {})["lte"] = max_price
-    if start_date:
-        where.setdefault("created_at", {})["gte"] = start_date
-    if end_date:
-        where.setdefault("created_at", {})["lte"] = end_date
 
     skip = (page - 1) * page_size
-    total = await prisma.product.count(where=where)
-    products = await prisma.product.find_many(
+
+    total = await prisma.asset.count(where=where)
+
+    assets = await prisma.asset.find_many(
         where=where,
         skip=skip,
         take=page_size,
         order={"created_at": "desc"},
-        include={"category": True},
     )
 
     return PaginatedAssets(
@@ -77,12 +51,12 @@ async def list_products(
         page=page,
         page_size=page_size,
         pages=math.ceil(total / page_size) if total else 0,
-        items=[_to_response(p) for p in products],
+        items=assets,
     )
 
 
 @router.post("/", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
-async def create_product(
+async def create_asset(
     body: AssetCreate,
     background_tasks: BackgroundTasks,
     _: int = Depends(get_current_user),
@@ -92,15 +66,6 @@ async def create_product(
     room = await prisma.room.find_unique(where={"id": body.room_id})
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    print({
-    "name": body.name,
-    "description": body.description,
-    "asset_type": body.asset_type,
-    "condition": body.condition,
-    "image": body.image,
-    "quantity": body.quantity,
-    "room_id": body.room_id,
-    })
     
 
     asset = await prisma.asset.create(
