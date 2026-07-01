@@ -37,51 +37,48 @@ class HostelResponse(BaseModel):
         from_attributes = True
 
 
-# ── Product ───────────────────────────────────────────────────────────────────
+# ── Asset ───────────────────────────────────────────────────────────────────
 
-class ProductCreate(BaseModel):
+class AssetCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    price: float = Field(..., ge=0)
-    sku: str = Field(..., min_length=1, max_length=50)
+
+    asset_type: str = Field(..., min_length=1, max_length=100)
+    condition: str = Field(default="Good")
+
     image: Optional[str] = None
     quantity: int = Field(default=0, ge=0)
-    hostel_id: Optional[int] = None
-    low_stock_threshold: int = Field(default=10, ge=0)
 
-    @field_validator("price")
-    @classmethod
-    def price_precision(cls, v: float) -> float:
-        return round(v, 2)
+    room_id: int
 
+    
 
-class ProductUpdate(BaseModel):
+class AssetUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    price: Optional[float] = Field(None, ge=0)
+
+    asset_type: Optional[str] = Field(None, min_length=1, max_length=100)
+    condition: Optional[str] = None
+
     image: Optional[str] = None
     quantity: Optional[int] = Field(None, ge=0)
-    hostel_id: Optional[int] = None
-    low_stock_threshold: Optional[int] = Field(None, ge=0)
 
-    @field_validator("price")
-    @classmethod
-    def price_precision(cls, v: Optional[float]) -> Optional[float]:
-        return round(v, 2) if v is not None else v
+    room_id: Optional[int] = None
 
+   
 
-class ProductResponse(BaseModel):
+class AssetResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
-    price: float
-    sku: str
+
+    asset_type: str
+    condition: str
+
     image: Optional[str]
     quantity: int
-    low_stock_threshold: int
-    is_low_stock: bool
-    hostel_id: Optional[int]
-    hostel: Optional[HostelResponse]
+
+    room_id: int
     created_at: datetime
     updated_at: datetime
 
@@ -91,22 +88,14 @@ class ProductResponse(BaseModel):
 
 # ── Pagination ────────────────────────────────────────────────────────────────
 
-class PaginatedProducts(BaseModel):
+class PaginatedAssets(BaseModel):
     total: int
     page: int
     page_size: int
     pages: int
-    items: List[ProductResponse]
+    items: List[AssetResponse]
 
 
-# ── Stock Alert ───────────────────────────────────────────────────────────────
-
-class StockAlert(BaseModel):
-    id: int
-    name: str
-    sku: str
-    quantity: int
-    low_stock_threshold: int
 
     # ── Room ─────────────────────────────────────────────────────────────────────
 
