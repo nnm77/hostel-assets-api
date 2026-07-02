@@ -154,10 +154,10 @@ Automated tests are included using pytest and httpx.
 
 ```bash
 pytest tests/ -v
-'''
+```
 
 ## Project Structure
-'''
+```
 
 
 app/
