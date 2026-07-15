@@ -8,22 +8,16 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "file:/data/database.db"
-      REDIS_URL: "redis://redis:6379"
+      DEBUG: "False"
+      SECRET_KEY: "django-insecure-changeme-in-production"
     volumes:
-      - db_data:/data        # ← persists SQLite across container restarts
-    depends_on:
-      - redis
+      - db_data:/data
+      - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
     restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
+    # For production, use gunicorn instead:
+    # command: gunicorn hostel_api.wsgi:application --bind 0.0.0.0:8000 --workers 4
 
 volumes:
   db_data:
-  redis_data:
+
