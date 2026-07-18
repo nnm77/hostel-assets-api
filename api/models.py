@@ -87,3 +87,73 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.asset_type} (Qty: {self.quantity})"
+
+
+class MaintenanceRequest(models.Model):
+    """Represents a maintenance request for an asset or room."""
+    STATUS_CHOICES = (
+        ('Open', 'Open'),
+        ('In Progress', 'In Progress'),
+        ('Resolved', 'Resolved'),
+        ('Closed', 'Closed'),
+    )
+
+    PRIORITY_CHOICES = (
+        ('Low', 'Low'),
+        ('Medium', 'Medium'),
+        ('High', 'High'),
+        ('Critical', 'Critical'),
+    )
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='Open'
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='Medium'
+    )
+    asset = models.ForeignKey(
+        Asset,
+        on_delete=models.CASCADE,
+        related_name='maintenance_requests',
+        null=True,
+        blank=True
+    )
+    room = models.ForeignKey(
+        Room,
+        on_delete=models.CASCADE,
+        related_name='maintenance_requests',
+        null=True,
+        blank=True
+    )
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='maintenance_requests_created',
+        null=True,
+        blank=True
+    )
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='maintenance_requests_assigned',
+        null=True,
+        blank=True
+    )
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Maintenance Request"
+        verbose_name_plural = "Maintenance Requests"
+
+    def __str__(self):
+        return f"{self.title} - {self.status} ({self.priority})"
