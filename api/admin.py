@@ -1,5 +1,5 @@
 from django.contrib import admin
-from api.models import User, Hostel, Room, Asset
+from api.models import User, Hostel, Room, Asset, MaintenanceRequest
 
 
 @admin.register(User)
@@ -38,3 +38,25 @@ class AssetAdmin(admin.ModelAdmin):
     list_filter = ['condition', 'asset_type', 'created_at', 'updated_at']
     search_fields = ['name', 'asset_type', 'room__room_number', 'room__hostel__name']
     readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(MaintenanceRequest)
+class MaintenanceRequestAdmin(admin.ModelAdmin):
+    list_display = ['title', 'status', 'priority', 'asset', 'room', 'assigned_to', 'created_at']
+    list_filter = ['status', 'priority', 'created_at', 'updated_at']
+    search_fields = ['title', 'description', 'asset__name', 'room__room_number']
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = (
+        ('Request Details', {
+            'fields': ('title', 'description', 'status', 'priority')
+        }),
+        ('Related To', {
+            'fields': ('asset', 'room')
+        }),
+        ('Assignment', {
+            'fields': ('requested_by', 'assigned_to')
+        }),
+        ('Notes & Timestamps', {
+            'fields': ('notes', 'created_at', 'updated_at', 'resolved_at')
+        }),
+    )
