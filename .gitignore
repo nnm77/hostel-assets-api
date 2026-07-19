@@ -3,4 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 database.db
-.prisma/
+.venv/
+
+db.sqlite3
+
