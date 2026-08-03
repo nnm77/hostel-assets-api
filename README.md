@@ -166,14 +166,14 @@ hostel-assets-api/
     └── migrations/             # Database migrations
 ```
 
-## Known Limitations / Roadmap
+## Future Enhancements
 
-- No live deployment yet — runs locally or via Docker only
-- No CI/CD pipeline (tests must be run manually)
-- No role-based access control — any authenticated user can modify any resource
-- No API documentation UI (OpenAPI/Swagger) currently wired up
-- SQLite only — would need a PostgreSQL config for a real production deployment
-- No image upload support for assets (currently a plain URL/text field)
+- **Live deployment** — deploy to a platform like Render or Railway so the API is reachable outside Docker/localhost
+- **CI/CD pipeline** — run the pytest suite automatically on every push via GitHub Actions
+- **Role-based access control** — differentiate Admin/Staff/User permissions instead of giving any authenticated user full write access
+- **Interactive API docs** — wire up `drf-spectacular` for a live, auto-generated OpenAPI/Swagger UI
+- **PostgreSQL support** — swap SQLite for PostgreSQL for a production-ready database setup
+
 
 ## Author
 
