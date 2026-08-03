@@ -6,112 +6,82 @@
 ![SQLite](https://img.shields.io/badge/Database-SQLite-blue)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED)
 
-A RESTful backend API for managing hostels, rooms, and the assets assigned to each room. Built with Django, Django REST Framework, JWT authentication, and SQLite.
+A backend REST API for managing hostel infrastructure: buildings (**hostels**), the **rooms** inside them, the physical **assets** in each room (furniture, appliances, etc.), and **maintenance requests** raised against them. Built with Django and Django REST Framework, secured with JWT authentication, and shipped with a Dockerized setup and an automated test suite.
 
-This project demonstrates modern Django backend API development with JWT authentication, DRF ViewSets, comprehensive testing, and Docker containerization.
+## Why this project
+
+Hostel/warden offices commonly track room inventories on paper or in spreadsheets, which makes it hard to know what's in a room, what condition it's in, or what's broken and needs fixing. This API models that workflow as a proper relational system — `Hostel → Room → Asset`, with a separate `MaintenanceRequest` workflow layered on top — so a front-end (web or mobile) could be built on it for hostel admin staff.
 
 ## Features
 
-- ✅ JWT authentication (register / login with refresh tokens)
-- ✅ Hostel, room, and asset management with cascading deletes
-- ✅ Complete CRUD operations for hostel assets, including quantity adjustment
-- ✅ Paginated asset listing with search and filtering
-- ✅ Django Admin interface for data management
-- ✅ Comprehensive test coverage (28+ tests)
-- ✅ Dockerized setup with Docker Compose
-- ✅ Interactive Swagger-like API documentation
+- **JWT authentication** — register/login endpoints issue short-lived access tokens and longer-lived refresh tokens (`djangorestframework-simplejwt`), with rotating refresh tokens and a configurable access-token lifetime.
+- **Hierarchical data model** — `Hostel → Room → Asset`, with cascading deletes (deleting a hostel removes its rooms and their assets automatically).
+- **Full CRUD everywhere** — Hostels, Rooms, Assets, and Maintenance Requests are all exposed as DRF `ModelViewSet`s through a `DefaultRouter`, giving list/create/retrieve/update/partial-update/delete on every resource for free.
+- **Custom quantity-adjustment endpoint** — `PATCH /assets/{id}/quantity/` increments or decrements stock by a signed delta (e.g. `{"quantity": -2}`) and clamps at zero instead of going negative.
+- **Maintenance request workflow** — a full ticketing model with `status` (Open/In Progress/Resolved/Closed) and `priority` (Low/Medium/High/Critical), linkable to a specific asset or room, with `requested_by` / `assigned_to` user references.
+- **Search, ordering, and pagination** — DRF's `SearchFilter` and `OrderingFilter` on Rooms, Assets, and Maintenance Requests; page-based pagination (10 per page, configurable via `?page_size=`, capped at 100).
+- **Django Admin** — every model is registered with custom `list_display`, `search_fields`, and `list_filter` so non-technical staff could manage data without hitting the API directly.
+- **Automated tests** — 28 pytest tests covering auth, CRUD, cascading deletes, pagination, search, and the quantity-adjustment edge cases (including the negative-clamp behaviour).
+- **Dockerized** — `Dockerfile` + `docker-compose.yaml` for one-command startup; `gunicorn` used to serve the app in the container.
 
 ## Tech Stack
 
-- **Framework:** Django 5.2 + Django REST Framework 3.14
-- **Authentication:** JWT (via djangorestframework-simplejwt)
-- **Database:** SQLite
-- **Password Hashing:** Django's built-in bcrypt hashing
-- **Containerization:** Docker + Docker Compose
-- **Testing:** pytest + pytest-django
-
-## Architecture
-
-```
-Client
-   │
-   ▼
-Django REST Framework (ViewSets → Serializers → Permissions)
-   │
-   ▼
-Django ORM
-   │
-   ▼
-SQLite Database
-```
+| Layer | Choice |
+|---|---|
+| Framework | Django 5.2 + Django REST Framework 3.14 |
+| Auth | JWT via `djangorestframework-simplejwt` |
+| Database | SQLite (dev) — swappable for PostgreSQL in production via `DATABASES` |
+| Testing | pytest + pytest-django |
+| Server | gunicorn (in Docker) |
+| Containerization | Docker + Docker Compose |
 
 ## Data Model
 
 ```
-Hostel (1) ──< Room (1) ──< Asset
+Hostel (1) ──< Room (1) ──< Asset (1) ──< MaintenanceRequest >── Room
+                                              │
+                                          requested_by / assigned_to ──> User
 ```
 
 - **Hostel** — a building/block. `name` is unique.
-- **Room** — belongs to one hostel. `room_number` is unique per hostel.
-- **Asset** — belongs to one room. Has a type, condition (defaults to "Good"), and quantity.
-- Deleting a hostel cascades to its rooms; deleting a room cascades to its assets.
+- **Room** — belongs to one hostel. `room_number` is unique *per hostel* (the same room number can exist in different hostels).
+- **Asset** — belongs to one room. Has a `condition` (Good/Fair/Poor/Damaged, defaults to Good) and a `quantity`.
+- **MaintenanceRequest** — optionally linked to an `Asset` and/or a `Room`, with a `status`/`priority` pair and optional `requested_by`/`assigned_to` users. Deleting the linked user does *not* delete the request (`on_delete=SET_NULL`), so history is preserved.
+- Deleting a hostel cascades to its rooms; deleting a room cascades to its assets and any linked maintenance requests.
 
 ## API Endpoints
 
-All endpoints except registration and login require a Bearer token
-(obtained from `/auth/login`).
+All endpoints except `/auth/register` and `/auth/login` require a JWT `Bearer` token, obtained from `/auth/login`.
 
 ### Auth
-| Method | Endpoint         | Description                          |
-|--------|------------------|----------------------------------------|
-| POST   | `/auth/register` | Create an account, returns a JWT       |
-| POST   | `/auth/login`    | Log in (form-encoded credentials), returns a JWT |
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Create an account; returns user info + access/refresh tokens |
+| POST | `/api/auth/login` | Authenticate; returns user info + access/refresh tokens |
 
-### Hostels
-| Method | Endpoint            | Description       |
-|--------|---------------------|--------------------|
-| GET    | `/hostels/`         | List all hostels   |
-| POST   | `/hostels/`         | Create a hostel    |
-| DELETE | `/hostels/{id}`     | Delete a hostel    |
+### Hostels, Rooms, Assets, Maintenance Requests
+Each of these is a full DRF `ModelViewSet`, so the same five operations are available on all four resources (`hostels`, `rooms`, `assets`, `maintenance-requests`):
 
-### Rooms
-| Method | Endpoint          | Description      |
-|--------|-------------------|-------------------|
-| GET    | `/rooms/`         | List all rooms    |
-| POST   | `/rooms/`         | Create a room     |
-| DELETE | `/rooms/{id}`     | Delete a room     |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/{resource}/` | List (paginated where configured; searchable/orderable) |
+| POST | `/api/{resource}/` | Create |
+| GET | `/api/{resource}/{id}/` | Retrieve one |
+| PUT | `/api/{resource}/{id}/` | Full update |
+| PATCH | `/api/{resource}/{id}/` | Partial update |
+| DELETE | `/api/{resource}/{id}/` | Delete |
 
-### Assets
-| Method | Endpoint                  | Description                              |
-|--------|---------------------------|--------------------------------------------|
-| GET    | `/assets/`                | List assets (paginated, optional search)  |
-| POST   | `/assets/`                | Create an asset                            |
-| GET    | `/assets/{id}`             | Retrieve a single asset                    |
-| PUT    | `/assets/{id}`             | Update an asset                            |
-| PATCH  | `/assets/{id}/quantity`    | Adjust quantity by a delta (+/-)          |
-| DELETE | `/assets/{id}`             | Delete an asset                            |
+Plus one custom action:
 
-Interactive API docs (Swagger) are available at `/docs` once the server is running.
+| Method | Endpoint | Description |
+|---|---|---|
+| PATCH | `/api/assets/{id}/quantity/` | Adjust quantity by a signed delta, e.g. `{"quantity": -2}`; clamped at 0 |
 
-
-## API Documentation
-
-### Swagger Overview
-
-![Swagger](images/swagger.png)
-
-### Authentication
-
-![Auth](images/auth.png)
-
-### Asset Endpoints
-
-![Assets](images/assets.png)
-
+**Search fields:** rooms (`room_number`, `hostel__name`), assets (`name`, `asset_type`, `room__room_number`, `room__hostel__name`), maintenance requests (`title`, `description`, `status`, `priority`).
 
 ## Getting Started
 
-### Docker (Recommended)
+### Docker (recommended)
 
 ```bash
 git clone https://github.com/nnm77/hostel-assets-api.git
@@ -122,7 +92,7 @@ docker-compose up --build
 
 The API will be available at `http://localhost:8000/`.
 
-### Local Development (without Docker)
+### Local development (without Docker)
 
 **Prerequisites:** Python 3.11+, pip, virtualenv
 
@@ -137,101 +107,73 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API will be available at `http://localhost:8000/`.
-
 ### Environment Variables
-
-See `.env.example` for the required variables:
 
 | Variable | Description | Default |
 |---|---|---|
-| `SECRET_KEY` | Django secret key (change in production!) | `django-insecure-...` |
-| `DEBUG` | Enable debug mode | `True` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT token expiry (minutes) | `30` |
+| `SECRET_KEY` | Django secret key — set a real random value in production | insecure dev key |
+| `DEBUG` | Enable Django debug mode | `True` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT access token lifetime, in minutes | `30` |
 
 ## Testing
 
-Run all tests with pytest:
-
 ```bash
-pytest -v
+pytest -v                              # run all 28 tests
+pytest api/tests.py::TestAssets -v     # run one test class
+pytest --cov=api api/tests.py -v       # run with coverage
 ```
 
-Run specific test class:
+Coverage includes:
+- Auth: registration, login, duplicate-username rejection, password-mismatch validation, unauthenticated access being blocked
+- CRUD for Hostels, Rooms, and Assets
+- Cascading deletes (hostel → room → asset)
+- Pagination and search
+- Quantity adjustment, including the zero-floor clamp
+- Uniqueness constraints (hostel name; room number per hostel)
 
-```bash
-pytest api/tests.py::TestAssets -v
-```
-
-Run with coverage:
-
-```bash
-pytest --cov=api api/tests.py -v
-```
-
-Current test coverage: **28 tests**, including:
-- Authentication (register, login, token validation)
-- CRUD operations for Hostels, Rooms, and Assets
-- Pagination and search functionality
-- Cascading deletes
-- Quantity adjustment
-- Unique constraints
-
-## Django Admin Interface
-
-Access the admin panel at `/admin/` after running migrations:
+## Django Admin
 
 ```bash
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Then navigate to `http://localhost:8000/admin/` and log in.
+Then log in at `http://localhost:8000/admin/` to manage Hostels, Rooms, Assets, Users, and Maintenance Requests through a UI — useful for seeding data or handling edge cases without going through the API.
 
 ## Project Structure
 
 ```
-hostel_api/
+hostel-assets-api/
 ├── manage.py                   # Django management script
 ├── requirements.txt            # Python dependencies
 ├── pytest.ini                  # pytest configuration
 ├── docker-compose.yaml         # Docker Compose setup
 ├── Dockerfile                  # Docker image definition
-├── db.sqlite3                  # SQLite database (auto-created)
 │
 ├── hostel_api/                 # Django project settings
 │   ├── settings.py             # Project configuration
-│   ├── urls.py                 # URL routing
-│   ├── wsgi.py                 # WSGI application
+│   ├── urls.py                 # Root URL routing + health check
+│   ├── wsgi.py                 # WSGI application (used by gunicorn)
 │   └── asgi.py                 # ASGI application
 │
-├── api/                        # Django REST Framework app
-│   ├── models.py               # Django ORM models (User, Hostel, Room, Asset)
-│   ├── serializers.py          # DRF Serializers
-│   ├── views.py                # ViewSets and APIViews
-│   ├── urls.py                 # API URL routing
-│   ├── permissions.py          # Custom permission classes
-│   ├── admin.py                # Django Admin configuration
-│   ├── tests.py                # Comprehensive test suite
-│   └── migrations/             # Database migrations
-│
-└── schema.prisma               # (Legacy) Prisma schema reference
+└── api/                        # Django REST Framework app
+    ├── models.py               # User, Hostel, Room, Asset, MaintenanceRequest
+    ├── serializers.py          # DRF serializers
+    ├── views.py                # ViewSets + auth views
+    ├── urls.py                 # API URL routing (DefaultRouter)
+    ├── admin.py                # Django Admin configuration
+    ├── tests.py                # Test suite (28 tests)
+    └── migrations/             # Database migrations
 ```
 
+## Known Limitations / Roadmap
 
-
-## Future Improvements
-
-- [ ] Maintenance request workflow
-- [ ] Role-based access control (Admin / Staff / User)
-- [ ] Advanced filtering and ordering
-- [ ] Asset history/audit trail
-- [ ] Image upload support for assets
-- [ ] Email notifications
-- [ ] CI/CD pipeline with GitHub Actions
-- [ ] PostgreSQL support for production
-- [ ] API rate limiting
-- [ ] GraphQL endpoint (optional)
+- No live deployment yet — runs locally or via Docker only
+- No CI/CD pipeline (tests must be run manually)
+- No role-based access control — any authenticated user can modify any resource
+- No API documentation UI (OpenAPI/Swagger) currently wired up
+- SQLite only — would need a PostgreSQL config for a real production deployment
+- No image upload support for assets (currently a plain URL/text field)
 
 ## Author
 
